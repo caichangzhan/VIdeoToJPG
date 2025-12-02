@@ -5,7 +5,7 @@
   <title>FramePicker · 4:3 视频截图工具</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
 
-  <!-- Cropper.js：裁剪（支持双指缩放） -->
+  <!-- Cropper.js：裁剪（严格 4:3） -->
   <link rel="stylesheet" href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css">
   <script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js"></script>
 
@@ -189,9 +189,8 @@
       margin-top: 4px;
     }
 
-    /* 隐藏的视频，仅做帧源 */
     #videoPlayer {
-      display:none;
+      display:none; /* 隐藏 video，仅作为帧源 */
     }
 
     .row {
@@ -219,7 +218,7 @@
       border-radius: var(--radius-lg);
       background:#020617;
       border:1px solid rgba(148,163,184,0.5);
-      touch-action:none;
+      touch-action:none; /* 避免在图上滚动页面时触发默认行为 */
       box-shadow: 0 12px 32px rgba(15,23,42,0.9);
     }
 
@@ -231,10 +230,39 @@
       touch-action:none;
     }
 
-    /* Cropper 容器覆盖在 img 上 */
     .cropper-container {
       font-family: inherit;
       touch-action:none;
+    }
+
+    .zoom-slider {
+      width: 100%;
+      accent-color: #38bdf8;
+    }
+    .zoom-slider[type="range"] {
+      -webkit-appearance:none;
+      appearance:none;
+      height:4px;
+      border-radius:999px;
+      background: rgba(15,23,42,0.9);
+      outline:none;
+    }
+    .zoom-slider[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance:none;
+      appearance:none;
+      width:15px;
+      height:15px;
+      border-radius:999px;
+      background: var(--accent);
+      box-shadow:0 0 0 2px rgba(15,23,42,0.9);
+      cursor:pointer;
+    }
+    .zoom-slider[type="range"]::-moz-range-thumb {
+      width:15px;
+      height:15px;
+      border-radius:999px;
+      background: var(--accent);
+      cursor:pointer;
     }
 
     .btn {
@@ -495,12 +523,12 @@
         <span class="badge">4:3 Video Frame Cutter · Pure Frontend</span>
       </div>
       <div class="title-sub">
-        上传视频 → 用手指拖动/双指缩放选择 4:3 区域 → 选择 0–8 秒时间段 → 浏览器本地逐帧切图 → 预览 & ZIP 下载。
+        上传视频 → 拖动裁剪框 + 滑条放大 → 选择 0–8 秒时间段 → 浏览器本地逐帧切图 → 预览 & ZIP 下载。
       </div>
     </div>
     <div class="chips">
       <span class="chip">严格 4:3 输出</span>
-      <span class="chip">支持双指放大裁剪</span>
+      <span class="chip">裁剪框可拖动 + 滑条缩放</span>
       <span class="chip">全程本地，不上传服务器</span>
     </div>
   </header>
@@ -512,7 +540,7 @@
         <div>
           <div class="step"><span class="step-dot">1</span> SELECT · CROP · TRIM</div>
           <div class="card-title">选择视频，设定 4:3 区域和时间区间</div>
-          <div class="card-sub">支持竖屏/横屏视频，裁剪框始终保持 4:3，可双指缩放。</div>
+          <div class="card-sub">支持竖屏/横屏视频，裁剪框始终保持 4:3，滑条控制放大。</div>
         </div>
         <div class="card-meta">
           建议：竖屏素材更友好<br/>
@@ -526,15 +554,26 @@
       </div>
       <div id="videoMeta"></div>
 
-      <!-- 隐藏视频，只作为帧源 -->
+      <!-- 隐藏 video，只作为帧源 -->
       <video id="videoPlayer" playsinline webkit-playsinline muted></video>
 
       <div class="row">
         <div class="col-preview">
-          <div class="label">参考帧预览 & 4:3 裁剪（可拖动/双指缩放）</div>
+          <div class="label">参考帧预览 & 4:3 裁剪（拖动 + 下方缩放）</div>
           <div id="previewWrap">
             <img id="framePreview" alt="参考帧"/>
           </div>
+
+          <div class="label" style="margin-top:6px;">缩放：</div>
+          <input
+            id="zoomSlider"
+            class="zoom-slider"
+            type="range"
+            min="0.6"
+            max="3"
+            step="0.1"
+            value="1"
+          >
         </div>
 
         <div class="col-controls">
@@ -570,7 +609,7 @@
           </div>
 
           <div class="meta-row">
-            <span>提示：双指在预览图上捏合即可放大/缩小裁剪区域，单指拖动移动。</span>
+            <span>提示：拖动预览图移动裁剪框，用缩放滑条调整构图。避免双指捏合造成误触放大。</span>
           </div>
 
           <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
@@ -603,7 +642,7 @@
           <div class="card-sub">截图按时间顺序排列，可横向滑动浏览。</div>
         </div>
         <div class="card-meta">
-          截图尺寸基于原视频像素<br/>
+          截图尺寸基于裁剪区域<br/>
           严格 4:3，无黑边
         </div>
       </div>
@@ -623,6 +662,7 @@
   const initBtn      = document.getElementById('initBtn');
   const resetBtn     = document.getElementById('resetBtn');
   const framePreview = document.getElementById('framePreview');
+  const zoomSlider   = document.getElementById('zoomSlider');
   const fpsInput     = document.getElementById('fpsInput');
   const confirmBtn   = document.getElementById('confirmBtn');
   const downloadZipBtn = document.getElementById('downloadZipBtn');
@@ -658,6 +698,7 @@
   let currentFrames = [];
   let videoW = 0;
   let videoH = 0;
+  let currentZoom = 1;
 
   const isIOS = /iP(hone|od|ad)/.test(navigator.platform)
     || (navigator.userAgent.includes('Mac') && 'ontouchend' in document);
@@ -679,10 +720,15 @@
     selectedFile = null;
     videoW = 0;
     videoH = 0;
+    currentZoom = 1;
+
     videoInput.value = '';
+    zoomSlider.value = '1';
+
     confirmBtn.disabled = true;
     downloadZipBtn.disabled = true;
     initBtn.disabled = true;
+
     framesStrip.innerHTML = '';
     timeline.innerHTML = '';
     currentFrames = [];
@@ -694,6 +740,7 @@
     trimStart = 0;
     trimEnd = 0;
     timelineWidth = 0;
+
     if (cropper) { cropper.destroy(); cropper = null; }
 
     if (videoUrl) {
@@ -737,11 +784,13 @@
     timeline.innerHTML = '';
     currentFrames = [];
     progressBar.style.width = '5%';
+    zoomSlider.value = '1';
+    currentZoom = 1;
+
     if (cropper) { cropper.destroy(); cropper = null; framePreview.style.display = 'none'; }
 
     if (videoUrl) URL.revokeObjectURL(videoUrl);
     videoUrl = URL.createObjectURL(file);
-
     videoPlayer.src = videoUrl;
 
     videoPlayer.onloadedmetadata = () => {
@@ -821,7 +870,6 @@
       cropper = null;
     }
 
-    // 关键：严格 4:3，支持拖动 + 双指缩放
     cropper = new Cropper(framePreview, {
       aspectRatio: 4 / 3,
       viewMode: 1,
@@ -832,14 +880,18 @@
       center: true,
       highlight: false,
       movable: true,
-      zoomable: true,
-      zoomOnTouch: true,
+      zoomable: true,       // 保留，方便我们用代码 zoomTo
+      zoomOnTouch: false,   // ❗ 关闭双指缩放，避免滑页面乱放大
       zoomOnWheel: false,
       scalable: false,
       rotatable: false,
       responsive: true,
       toggleDragModeOnDblclick: false
     });
+
+    // 初始化缩放滑条
+    currentZoom = 1;
+    zoomSlider.value = '1';
   }
 
   function seekVideo(time) {
@@ -852,6 +904,14 @@
       videoPlayer.currentTime = time;
     });
   }
+
+  // 缩放滑条控制裁剪区域
+  zoomSlider.addEventListener('input', () => {
+    if (!cropper) return;
+    const z = parseFloat(zoomSlider.value) || 1;
+    currentZoom = z;
+    cropper.zoomTo(z);
+  });
 
   async function initTimelineFromVideo() {
     const thumbs = [];
