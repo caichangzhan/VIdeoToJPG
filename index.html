@@ -2,13 +2,9 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8"/>
-  <title>视频 4:3 截图工具（纯前端，适配手机）</title>
-  <!-- 关键：禁止整页缩放，避免一碰就放大页面 -->
+  <title>视频 4:3 截图工具（纯前端，移动端友好）</title>
+  <!-- 禁止整页缩放，避免一碰就放大 -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
-
-  <!-- Cropper.js：4:3 裁剪框 -->
-  <link rel="stylesheet" href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css">
-  <script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js"></script>
 
   <!-- JSZip：前端打包 ZIP -->
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -38,25 +34,6 @@
     .section-title { margin:12px 0 6px; font-weight:600; font-size:14px; }
     input[type="file"] { font-size:14px; }
 
-    #framePreview {
-      max-width:420px;
-      width:100%;
-      max-height:420px;
-      display:none;
-      border-radius:12px;
-      background:#000;
-      touch-action:none; /* 让手势优先给 Cropper，用于拖动，而不是浏览器滚动 */
-    }
-
-    #videoPlayer {
-      max-width:420px;
-      width:100%;
-      display:none;
-      border-radius:12px;
-      margin-bottom:8px;
-      background:#000;
-    }
-
     button {
       padding:8px 14px;
       border:none;
@@ -68,6 +45,15 @@
     }
     button:disabled { opacity:.5; cursor:not-allowed; }
 
+    #videoPlayer {
+      max-width:420px;
+      width:100%;
+      display:none;
+      border-radius:12px;
+      margin-bottom:8px;
+      background:#000;
+    }
+
     .row {
       display:flex;
       gap:12px;
@@ -75,25 +61,46 @@
       align-items:flex-start;
     }
 
-    #framesStrip {
-      display:flex;
-      gap:8px;
-      overflow-x:auto;
-      margin-top:10px;
-    }
-    .thumb {
-      flex:0 0 auto;
-      width:150px;
-      background:#f9fafb;
-      border-radius:12px;
-      padding:4px;
-      box-shadow:0 1px 4px rgba(0,0,0,.08);
-      font-size:11px;
-      text-align:center;
-    }
-    .thumb img {
+    /* 参考帧容器 */
+    #previewWrap {
+      position:relative;
+      max-width:420px;
       width:100%;
+      overflow:hidden;
+      border-radius:12px;
+      background:#000;
+      touch-action:none; /* 手势优先给我们处理，减少滚动/缩放干扰 */
+    }
+    #framePreview {
+      width:100%;
+      display:none;
+      user-select:none;
+      -webkit-user-drag:none;
+      pointer-events:none; /* 图片本身不接触事件，全部给裁剪框 */
+    }
+    /* 4:3 裁剪框：固定宽度，只能上下移动 */
+    #cropBox {
+      position:absolute;
+      left:0;
+      right:0;
+      margin:0 auto;
+      border:2px solid #10b981;
+      box-shadow:0 0 0 9999px rgba(0,0,0,0.45);
       border-radius:10px;
+      pointer-events:auto;
+      touch-action:none;
+      background:transparent;
+    }
+    #cropBox::after{
+      content:'4:3 区域';
+      position:absolute;
+      right:4px;
+      bottom:4px;
+      font-size:10px;
+      padding:2px 4px;
+      background:rgba(15,23,42,0.7);
+      color:#e5e7eb;
+      border-radius:999px;
     }
 
     /* 时间轴：可拖两端，可整体拖动 */
@@ -160,6 +167,11 @@
       pointer-events:auto;
     }
 
+    /* 帧率 + 裁剪滑条 */
+    #cropSlider {
+      width:100%;
+    }
+
     .button-row {
       display:flex;
       gap:8px;
@@ -173,6 +185,27 @@
       background:#6b7280;
     }
 
+    #framesStrip {
+      display:flex;
+      gap:8px;
+      overflow-x:auto;
+      margin-top:10px;
+    }
+    .thumb {
+      flex:0 0 auto;
+      width:150px;
+      background:#f9fafb;
+      border-radius:12px;
+      padding:4px;
+      box-shadow:0 1px 4px rgba(0,0,0,.08);
+      font-size:11px;
+      text-align:center;
+    }
+    .thumb img {
+      width:100%;
+      border-radius:10px;
+    }
+
     @media (max-width:600px){
       h1{font-size:18px;}
       .container{padding:12px;}
@@ -184,7 +217,7 @@
 <div class="container">
   <h1>视频 4:3 截图工具</h1>
   <p class="sub">
-    上传视频 → 播放一下让浏览器“认”它 → 点「生成参考帧」→ 4:3 裁剪（拖动图片即可，不再放大缩小）+ 时间轴选区（≤8 秒，可整体拖动）→ 纯前端切帧 + ZIP 下载。
+    上传视频 → 播放一下 → 点击生成参考帧 → 上下移动 4:3 裁剪框 → 调时间轴（≤8 秒，可整体拖动）→ 纯前端切帧 + ZIP 下载。
   </p>
 
   <!-- 用同一个 video 做预览 / 时间轴缩略图 / 截帧 -->
@@ -201,16 +234,27 @@
   <div style="margin-top:12px;">
     <div class="section-title">2️⃣ 播放解锁 → 生成参考帧 → 选择 4:3 区域 + 时间区间</div>
     <div class="row">
-      <img id="framePreview" alt="参考帧"/>
+      <!-- 自制裁剪框 -->
+      <div id="previewWrap">
+        <img id="framePreview" alt="参考帧"/>
+        <div id="cropBox" style="display:none;"></div>
+      </div>
 
       <div style="flex:1; min-width:260px; display:flex; flex-direction:column; gap:8px;">
 
         <button id="initBtn" disabled>👉 生成参考帧 & 时间轴</button>
-        <div style="font-size:12px;color:#6b7280;">选完视频后，先在上面的播放器里随便播放 / 暂停一下，再点这个按钮。</div>
+        <div style="font-size:12px;color:#6b7280;">
+          选完视频后，先在上面的播放器里随便播放 / 暂停一下，再点这个按钮。
+        </div>
 
         <label style="font-size:13px;">
           帧率 FPS：
           <input id="fpsInput" type="number" value="10" min="1" max="30" style="width:80px;">
+        </label>
+
+        <label style="font-size:13px;">
+          4:3 区域上下位置：
+          <input id="cropSlider" type="range" min="0" max="1000" value="500">
         </label>
 
         <div class="section-title" style="margin:4px 0 4px;">时间区间（秒）</div>
@@ -251,6 +295,9 @@
   const videoPlayer  = document.getElementById('videoPlayer');
   const initBtn      = document.getElementById('initBtn');
   const framePreview = document.getElementById('framePreview');
+  const previewWrap  = document.getElementById('previewWrap');
+  const cropBox      = document.getElementById('cropBox');
+  const cropSlider   = document.getElementById('cropSlider');
   const fpsInput     = document.getElementById('fpsInput');
   const confirmBtn   = document.getElementById('confirmBtn');
   const downloadZipBtn = document.getElementById('downloadZipBtn');
@@ -269,8 +316,8 @@
   const trimStartEl   = document.getElementById('trimStart');
   const trimEndEl     = document.getElementById('trimEnd');
 
-  let cropper = null;
   let selectedFile = null;
+  let videoUrl = null;
 
   let duration = 0;
   let trimStart = 0;
@@ -281,7 +328,13 @@
   const MIN_WINDOW = 0.5;
 
   let currentFrames = [];
-  let videoUrl = null;
+
+  // 裁剪相关（用视频坐标）
+  let videoW = 0;
+  let videoH = 0;
+  let cropTopVideo = 0;      // 裁剪区域在视频里的 top（像素）
+  let cropHeightVideo = 0;   // 裁剪区域高度（像素）= videoW * 3/4
+  let cropMaxTopVideo = 0;   // 最大可上移位置
 
   const isIOS = /iP(hone|od|ad)/.test(navigator.platform)
     || (navigator.userAgent.includes('Mac') && 'ontouchend' in document);
@@ -309,6 +362,8 @@
     framesStrip.innerHTML = '';
     videoMeta.textContent = '';
     currentFrames = [];
+    framePreview.style.display = 'none';
+    cropBox.style.display = 'none';
 
     if (videoUrl) URL.revokeObjectURL(videoUrl);
     videoUrl = URL.createObjectURL(file);
@@ -318,7 +373,9 @@
 
     videoPlayer.onloadedmetadata = () => {
       duration = videoPlayer.duration;
-      videoMeta.textContent = `时长：${duration.toFixed(1)} 秒`;
+      videoW = videoPlayer.videoWidth;
+      videoH = videoPlayer.videoHeight;
+      videoMeta.textContent = `时长：${duration.toFixed(1)} 秒，分辨率：${videoW}×${videoH}`;
     };
   });
 
@@ -333,48 +390,34 @@
 
     await unlockVideo();
 
-    await setupPreviewFrameFromCurrent();
+    await setupPreviewFrame();
     await initTimelineFromVideo();
 
     confirmBtn.disabled = false;
     statusText.textContent = '参考帧和时间轴已生成，可以调整裁剪区域和时间区间，然后开始切帧。';
   });
 
-  async function setupPreviewFrameFromCurrent() {
+  // 取中间一帧，作为参考帧，顺便初始化裁剪框参数
+  async function setupPreviewFrame() {
     const captureTime = duration / 2;
     await seekVideo(captureTime);
 
     const canvas = document.createElement('canvas');
-    canvas.width = videoPlayer.videoWidth;
-    canvas.height = videoPlayer.videoHeight;
+    canvas.width = videoW;
+    canvas.height = videoH;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(videoPlayer, 0, 0, canvas.width, canvas.height);
 
     framePreview.src = canvas.toDataURL('image/jpeg', 0.9);
     framePreview.style.display = 'block';
 
-    if (cropper) {
-      cropper.destroy();
-      cropper = null;
-    }
+    // 以视频宽度为基准，裁剪高度 = 宽 * 3/4
+    cropHeightVideo = videoW * 3 / 4;
+    cropMaxTopVideo = Math.max(0, videoH - cropHeightVideo);
+    cropTopVideo = cropMaxTopVideo / 2;  // 默认居中
 
-    // 关键：禁止缩放，只允许拖动图片移动裁剪区域
-    cropper = new Cropper(framePreview, {
-      aspectRatio: 4 / 3,
-      viewMode: 1,
-      autoCropArea: 1,
-      dragMode: 'move',
-      movable: true,
-      zoomable: false,
-      zoomOnTouch: false,
-      zoomOnWheel: false,
-      scalable: false,
-      rotatable: false,
-      background: false,
-      guides: false,
-      responsive: true,
-      toggleDragModeOnDblclick: false
-    });
+    cropSlider.value = 500;
+    applyCropUI();
   }
 
   function seekVideo(time) {
@@ -388,6 +431,84 @@
     });
   }
 
+  // 把当前 cropTopVideo / cropHeightVideo 映射到裁剪框 UI
+  function applyCropUI() {
+    const displayW = framePreview.clientWidth;
+    if (!displayW || !videoW) return;
+
+    const scale = displayW / videoW; // 从视频像素到显示像素
+    const displayH = videoH * scale;
+
+    const dispCropH = cropHeightVideo * scale;
+    const dispCropTop = cropTopVideo * scale;
+
+    previewWrap.style.height = displayH + 'px';
+    cropBox.style.display = 'block';
+    cropBox.style.height = dispCropH + 'px';
+    cropBox.style.top = dispCropTop + 'px';
+  }
+
+  // slider 控制上下位置
+  cropSlider.addEventListener('input', () => {
+    if (!videoH) return;
+    const ratio = Number(cropSlider.value) / 1000; // 0 ~ 1
+    cropTopVideo = cropMaxTopVideo * ratio;
+    applyCropUI();
+  });
+
+  // 手指拖动裁剪框上下移动
+  (function setupCropDrag(){
+    let dragging = false;
+    let startY = 0;
+    let startTopVideo = 0;
+
+    const pointerDown = (e) => {
+      e.preventDefault();
+      dragging = true;
+      startY = e.clientY || (e.touches && e.touches[0].clientY);
+      startTopVideo = cropTopVideo;
+      cropBox.setPointerCapture && cropBox.setPointerCapture(e.pointerId || 1);
+    };
+    const pointerMove = (e) => {
+      if (!dragging) return;
+      const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+      if (clientY == null) return;
+      e.preventDefault();
+
+      const displayW = framePreview.clientWidth;
+      if (!displayW || !videoW) return;
+      const scale = displayW / videoW;
+
+      const dyPx = clientY - startY;
+      const dyVideo = dyPx / scale;
+
+      let newTop = startTopVideo + dyVideo;
+      newTop = Math.max(0, Math.min(cropMaxTopVideo, newTop));
+
+      cropTopVideo = newTop;
+      applyCropUI();
+
+      // 同步 slider
+      const ratio = cropMaxTopVideo ? (cropTopVideo / cropMaxTopVideo) : 0;
+      cropSlider.value = Math.round(ratio * 1000);
+    };
+    const pointerUp = (e) => {
+      dragging = false;
+      cropBox.releasePointerCapture && cropBox.releasePointerCapture(e.pointerId || 1);
+    };
+
+    cropBox.addEventListener('pointerdown', pointerDown);
+    cropBox.addEventListener('pointermove', pointerMove);
+    cropBox.addEventListener('pointerup', pointerUp);
+    cropBox.addEventListener('pointercancel', pointerUp);
+
+    // 兼容旧移动端（不支持 pointer）
+    cropBox.addEventListener('touchstart', pointerDown, {passive:false});
+    cropBox.addEventListener('touchmove', pointerMove, {passive:false});
+    cropBox.addEventListener('touchend', pointerUp);
+  })();
+
+  // 时间轴：生成缩略图并初始化选区
   async function initTimelineFromVideo() {
     const thumbs = [];
     const framesCount = Math.min(16, Math.max(6, Math.round(duration * 1.5)));
@@ -573,11 +694,11 @@
     };
   }
 
+  // 纯前端切帧（用我们自算的裁剪区域）
   async function processVideoFrames() {
     const fps = Number(fpsInput.value) || 10;
-    if (!selectedFile || !cropper || !fps) return;
+    if (!selectedFile || !videoW || !videoH) return;
 
-    const cropData = cropper.getData(true);
     const startSec = trimStart;
     const endSec   = trimEnd;
     const span     = endSec - startSec;
@@ -600,8 +721,9 @@
     await unlockVideo();
 
     const canvas = document.createElement('canvas');
-    canvas.width  = Math.round(cropData.width);
-    canvas.height = Math.round(cropData.height);
+    canvas.width  = cropHeightVideo / (3/4); // 等价于 videoW
+    canvas.height = cropHeightVideo;         // 保持 4:3
+
     const ctx = canvas.getContext('2d');
 
     for (let i = 0; i < frameTimes.length; i++) {
@@ -613,7 +735,7 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(
         videoPlayer,
-        cropData.x, cropData.y, cropData.width, cropData.height,
+        0, cropTopVideo, videoW, cropHeightVideo,
         0, 0, canvas.width, canvas.height
       );
 
@@ -640,8 +762,8 @@
   }
 
   confirmBtn.addEventListener('click', async () => {
-    if (!selectedFile || !cropper) {
-      alert('请先选择视频并完成裁剪');
+    if (!selectedFile || !videoW) {
+      alert('请先选择视频并生成参考帧');
       return;
     }
     confirmBtn.disabled = true;
