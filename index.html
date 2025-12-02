@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8"/>
-  <title>视频 4:3 截图工具（纯前端，移动端友好）</title>
+  <title>视频 4:3 截图工具 · FramePicker</title>
   <!-- 禁止整页缩放，避免一碰就放大 -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
 
@@ -11,108 +11,330 @@
 
   <style>
     :root {
-      font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
-      background:#f3f4f6;
-      color:#111827;
+      --bg: #0f172a;
+      --card-bg: #020617;
+      --card-elevated: #020617;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.12);
+      --accent-strong: rgba(56, 189, 248, 0.2);
+      --accent-green: #22c55e;
+      --accent-red: #f97373;
+      --border-subtle: rgba(148, 163, 184, 0.4);
+      --text-main: #e5e7eb;
+      --text-sub: #9ca3af;
+      --text-mute: #6b7280;
+      --radius-xl: 18px;
+      --radius-lg: 12px;
+      --radius-pill: 999px;
+      --shadow-soft: 0 22px 60px rgba(15, 23, 42, 0.55);
     }
-    body {
-      margin:0;
-      padding:16px;
-      display:flex;
-      justify-content:center;
-    }
-    .container {
-      width:100%;
-      max-width:1100px;
-      background:#fff;
-      border-radius:16px;
-      padding:16px;
-      box-shadow:0 10px 25px rgba(15,23,42,.12);
-    }
-    h1 { margin:0 0 6px; font-size:20px; font-weight:600; }
-    .sub { font-size:13px; color:#6b7280; margin-bottom:12px; }
-    .section-title { margin:12px 0 6px; font-weight:600; font-size:14px; }
-    input[type="file"] { font-size:14px; }
 
-    button {
-      padding:8px 14px;
-      border:none;
-      background:#2563eb;
-      color:#fff;
-      border-radius:999px;
-      cursor:pointer;
-      font-size:14px;
+    * {
+      box-sizing: border-box;
     }
-    button:disabled { opacity:.5; cursor:not-allowed; }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+      font-family: system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif;
+      background: radial-gradient(circle at top, #1e293b 0, #020617 40%, #000 100%);
+      color: var(--text-main);
+    }
+
+    .app-shell {
+      width: 100%;
+      max-width: 1120px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: linear-gradient(135deg, rgba(15,23,42,0.95), rgba(15,23,42,0.9));
+      border-radius: 14px;
+      border: 1px solid rgba(148,163,184,0.4);
+      box-shadow: 0 12px 35px rgba(15,23,42,0.6);
+      backdrop-filter: blur(14px);
+    }
+
+    .title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .title-main {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+
+    .badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.5);
+      background: radial-gradient(circle at top, rgba(148,163,184,0.2), rgba(15,23,42,0.9));
+      color: #e5e7eb;
+    }
+
+    .title-sub {
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+
+    .chip-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      font-size: 11px;
+    }
+
+    .chip {
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.4);
+      color: var(--text-sub);
+    }
+
+    /* 主卡片布局 */
+    .main-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      gap: 14px;
+    }
+
+    @media (max-width: 880px) {
+      .main-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .card {
+      background: radial-gradient(circle at top left, rgba(15,23,42,0.95), #020617);
+      border-radius: var(--radius-xl);
+      padding: 14px 16px;
+      border: 1px solid rgba(148,163,184,0.35);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .step-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .step-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      border: 1px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .card-sub {
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-top: 2px;
+    }
+
+    .card-header-right {
+      font-size: 11px;
+      color: var(--text-mute);
+      text-align: right;
+    }
+
+    /* 上传 & 视频区域 */
 
     #videoPlayer {
-      max-width:420px;
-      width:100%;
-      display:none;
-      border-radius:12px;
-      margin-bottom:8px;
+      width: 100%;
+      max-width: 480px;
+      display: none;
+      border-radius: var(--radius-lg);
+      margin-top: 8px;
       background:#000;
+      border: 1px solid rgba(30,64,175,0.7);
+      box-shadow: 0 10px 30px rgba(15,23,42,0.75);
     }
 
-    .row {
-      display:flex;
-      gap:12px;
-      flex-wrap:wrap;
-      align-items:flex-start;
+    .file-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-top: 6px;
     }
 
-    /* 参考帧容器 */
+    input[type="file"] {
+      font-size: 13px;
+      color: var(--text-main);
+    }
+
+    input[type="file"]::file-selector-button {
+      border:none;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(31,41,55,0.9);
+      color: var(--text-main);
+      font-size: 12px;
+      cursor: pointer;
+      border:1px solid rgba(148,163,184,0.6);
+      margin-right: 10px;
+    }
+
+    #videoMeta {
+      font-size: 11px;
+      color: var(--text-sub);
+      margin-top: 4px;
+    }
+
+    /* 参考帧 + 裁剪 + 时间轴 */
+
+    .row-flex {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      margin-top: 4px;
+    }
+
+    .preview-column {
+      flex: 0 0 280px;
+      max-width: 360px;
+      min-width: 240px;
+    }
+
+    .controls-column {
+      flex: 1;
+      min-width: 230px;
+    }
+
+    .label-text {
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-top: 6px;
+      margin-bottom: 4px;
+    }
+
     #previewWrap {
       position:relative;
-      max-width:420px;
       width:100%;
+      max-width:380px;
       overflow:hidden;
-      border-radius:12px;
-      background:#000;
-      touch-action:none; /* 手势优先给我们处理，减少滚动/缩放干扰 */
+      border-radius: var(--radius-lg);
+      background:#020617;
+      border:1px solid rgba(148,163,184,0.4);
+      touch-action:none;
+      box-shadow: 0 12px 35px rgba(15,23,42,0.85);
     }
+
     #framePreview {
       width:100%;
       display:none;
       user-select:none;
       -webkit-user-drag:none;
-      pointer-events:none; /* 图片本身不接触事件，全部给裁剪框 */
+      pointer-events:none;
     }
-    /* 4:3 裁剪框：固定宽度，只能上下移动 */
+
     #cropBox {
       position:absolute;
-      left:0;
-      right:0;
+      left:10px;
+      right:10px;
       margin:0 auto;
-      border:2px solid #10b981;
-      box-shadow:0 0 0 9999px rgba(0,0,0,0.45);
-      border-radius:10px;
+      border:2px solid var(--accent);
+      box-shadow:0 0 0 9999px rgba(0,0,0,0.55);
+      border-radius:12px;
       pointer-events:auto;
       touch-action:none;
       background:transparent;
     }
+
     #cropBox::after{
-      content:'4:3 区域';
+      content:'4:3';
       position:absolute;
-      right:4px;
-      bottom:4px;
+      right:6px;
+      bottom:6px;
       font-size:10px;
-      padding:2px 4px;
-      background:rgba(15,23,42,0.7);
+      padding:2px 6px;
+      background:rgba(15,23,42,0.9);
       color:#e5e7eb;
       border-radius:999px;
+      border:1px solid rgba(148,163,184,0.6);
     }
 
-    /* 时间轴：可拖两端，可整体拖动 */
+    #cropSlider {
+      width:100%;
+      accent-color: var(--accent);
+    }
+
+    input[type="range"] {
+      -webkit-appearance:none;
+      appearance:none;
+      height:4px;
+      border-radius:999px;
+      background: rgba(15,23,42,0.9);
+      outline:none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance:none;
+      appearance:none;
+      width:15px;
+      height:15px;
+      border-radius:999px;
+      background: var(--accent);
+      box-shadow:0 0 0 2px rgba(15,23,42,0.9);
+      cursor:pointer;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width:15px;
+      height:15px;
+      border-radius:999px;
+      background: var(--accent);
+      cursor:pointer;
+    }
+
+    /* 时间轴 */
+
     #trimContainer {
       position: relative;
       width: 100%;
       max-width: 420px;
-      height: 60px;
+      height: 62px;
       margin-top: 6px;
       overflow: hidden;
-      border-radius: 8px;
-      background:#000;
+      border-radius: 12px;
+      background: radial-gradient(circle at top, #1e293b, #020617);
+      border:1px solid rgba(30,64,175,0.7);
+      box-shadow: 0 10px 30px rgba(15,23,42,0.8);
     }
     #timeline {
       height: 100%;
@@ -123,6 +345,7 @@
       width: auto;
       flex-shrink: 0;
       object-fit: cover;
+      filter: saturate(1.1) contrast(1.05);
     }
     #trimOverlay {
       position: absolute;
@@ -133,16 +356,28 @@
     .handle {
       position: absolute;
       top: 0;
-      width: 12px;
+      width: 14px;
       height: 100%;
-      background: rgba(255,255,255,0.9);
-      border: 2px solid #fff;
-      border-radius: 4px;
+      background: rgba(15,23,42,0.05);
+      border: 2px solid #f9fafb;
+      border-radius: 10px;
       cursor: ew-resize;
-      box-shadow:0 0 4px rgba(0,0,0,.5);
+      box-shadow:0 0 0 1px rgba(15,23,42,0.8), 0 0 8px rgba(15,23,42,0.9);
       pointer-events:auto;
       z-index:2;
     }
+    .handle::before {
+      content:'';
+      position:absolute;
+      top:50%;
+      left:50%;
+      width:1px;
+      height:22px;
+      border-radius:999px;
+      transform:translate(-50%,-50%);
+      background:linear-gradient(to bottom, rgba(15,23,42,0.1), rgba(15,23,42,0.9), rgba(15,23,42,0.1));
+    }
+
     #leftHandle { left: 0; }
     #rightHandle { right: 0; }
 
@@ -150,14 +385,13 @@
       position: absolute;
       top: 0;
       height: 100%;
-      background: rgba(0,0,0,0.5);
+      background: rgba(15,23,42,0.7);
       pointer-events: none;
       z-index:1;
     }
     #shadeLeft  { left: 0; width: 0; }
     #shadeRight { right: 0; width: 0; }
 
-    /* 中间可拖区域（整体移动选区） */
     #windowDragArea {
       position:absolute;
       top:0;
@@ -167,9 +401,23 @@
       pointer-events:auto;
     }
 
-    /* 帧率 + 裁剪滑条 */
-    #cropSlider {
-      width:100%;
+    .inline-meta {
+      font-size: 11px;
+      color: var(--text-sub);
+      margin-top: 4px;
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .pill-meta {
+      padding:2px 8px;
+      border-radius:999px;
+      background:rgba(15,23,42,0.9);
+      border:1px solid rgba(148,163,184,0.6);
+      font-size:11px;
+      color:var(--text-sub);
     }
 
     .button-row {
@@ -178,122 +426,340 @@
       margin-top:8px;
       flex-wrap:wrap;
     }
-    #downloadZipBtn {
-      background:#059669;
+
+    .btn {
+      padding:7px 14px;
+      border-radius:var(--radius-pill);
+      border:none;
+      font-size:13px;
+      font-weight:500;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      cursor:pointer;
+      transition:transform 0.08s ease, box-shadow 0.08s ease, background 0.12s;
+      white-space:nowrap;
     }
-    #downloadZipBtn:disabled {
+    .btn:disabled {
+      opacity:0.55;
+      cursor:not-allowed;
+      transform:none;
+      box-shadow:none;
+    }
+    .btn-primary {
+      background:linear-gradient(135deg, #38bdf8, #2563eb);
+      color:#f9fafb;
+      box-shadow:0 12px 30px rgba(37,99,235,0.45);
+      border:1px solid rgba(191,219,254,0.8);
+    }
+    .btn-primary:hover:not(:disabled) {
+      transform:translateY(-1px);
+      box-shadow:0 16px 40px rgba(37,99,235,0.55);
+    }
+    .btn-secondary {
+      background:rgba(15,23,42,0.95);
+      color:var(--text-sub);
+      border:1px solid rgba(148,163,184,0.7);
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background:rgba(15,23,42,1);
+      transform:translateY(-1px);
+      box-shadow:0 10px 26px rgba(15,23,42,0.85);
+    }
+    .btn-success {
+      background:linear-gradient(135deg, #22c55e, #16a34a);
+      color:#f9fafb;
+      border:1px solid rgba(187,247,208,0.9);
+      box-shadow:0 12px 30px rgba(34,197,94,0.55);
+    }
+    .btn-success:hover:not(:disabled) {
+      transform:translateY(-1px);
+      box-shadow:0 14px 36px rgba(34,197,94,0.7);
+    }
+
+    /* 状态条 + 进度条 */
+
+    .status-bar {
+      margin-top:10px;
+      padding:6px 9px;
+      border-radius: var(--radius-lg);
+      background: rgba(15,23,42,0.95);
+      border: 1px solid rgba(148,163,184,0.45);
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      font-size:11px;
+      color: var(--text-sub);
+    }
+
+    .status-line {
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+    .status-dot {
+      width:7px;
+      height:7px;
+      border-radius:999px;
+      background:var(--accent);
+      box-shadow:0 0 0 4px rgba(56,189,248,0.18);
+    }
+    .status-dot.idle {
       background:#6b7280;
+      box-shadow:none;
     }
+    .status-dot.error {
+      background:var(--accent-red);
+      box-shadow:0 0 0 4px rgba(248,113,113,0.2);
+    }
+    .status-text-main {
+      color:var(--text-main);
+    }
+
+    .progress-wrap {
+      width:100%;
+      height:4px;
+      border-radius:999px;
+      background:rgba(15,23,42,0.9);
+      overflow:hidden;
+    }
+    .progress-bar {
+      width:0%;
+      height:100%;
+      border-radius:999px;
+      background:linear-gradient(90deg, #38bdf8, #22c55e);
+      transition:width 0.12s ease-out;
+    }
+
+    /* 结果展示 */
 
     #framesStrip {
       display:flex;
-      gap:8px;
+      gap:10px;
       overflow-x:auto;
       margin-top:10px;
+      padding-bottom:4px;
     }
+    #framesStrip::-webkit-scrollbar {
+      height:6px;
+    }
+    #framesStrip::-webkit-scrollbar-track {
+      background:rgba(15,23,42,0.9);
+      border-radius:999px;
+    }
+    #framesStrip::-webkit-scrollbar-thumb {
+      background:linear-gradient(90deg, #38bdf8, #22c55e);
+      border-radius:999px;
+    }
+
     .thumb {
       flex:0 0 auto;
-      width:150px;
-      background:#f9fafb;
-      border-radius:12px;
-      padding:4px;
-      box-shadow:0 1px 4px rgba(0,0,0,.08);
+      width:160px;
+      background:radial-gradient(circle at top, #020617, #020617);
+      border-radius:14px;
+      padding:5px;
+      box-shadow:0 10px 25px rgba(15,23,42,0.95);
+      border:1px solid rgba(30,64,175,0.7);
       font-size:11px;
-      text-align:center;
+      color:var(--text-sub);
     }
     .thumb img {
       width:100%;
       border-radius:10px;
+      display:block;
+    }
+    .thumb-meta {
+      margin-top:4px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:6px;
+    }
+    .thumb-tag {
+      padding:2px 6px;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,0.7);
+      background:rgba(15,23,42,0.9);
+    }
+    .thumb-time {
+      font-size:10px;
+      color:var(--text-mute);
     }
 
-    @media (max-width:600px){
-      h1{font-size:18px;}
-      .container{padding:12px;}
+    @media (max-width: 640px) {
+      .card {
+        padding:12px;
+      }
+      .header {
+        flex-direction:column;
+        align-items:flex-start;
+      }
+      .card-header {
+        flex-direction:column;
+        align-items:flex-start;
+        gap:4px;
+      }
     }
   </style>
 </head>
 <body>
 
-<div class="container">
-  <h1>视频 4:3 截图工具</h1>
-  <p class="sub">
-    上传视频 → 播放一下 → 点击生成参考帧 → 上下移动 4:3 裁剪框 → 调时间轴（≤8 秒，可整体拖动）→ 纯前端切帧 + ZIP 下载。
-  </p>
+<div class="app-shell">
 
-  <!-- 用同一个 video 做预览 / 时间轴缩略图 / 截帧 -->
-  <video id="videoPlayer" controls playsinline webkit-playsinline muted></video>
-
-  <!-- 1. 上传视频 -->
-  <div>
-    <div class="section-title">1️⃣ 选择视频</div>
-    <input id="videoInput" type="file" accept="video/*">
-    <div id="videoMeta" style="font-size:12px;color:#666;margin-top:4px;"></div>
-  </div>
-
-  <!-- 2. 裁剪参考帧 + 时间区间 -->
-  <div style="margin-top:12px;">
-    <div class="section-title">2️⃣ 播放解锁 → 生成参考帧 → 选择 4:3 区域 + 时间区间</div>
-    <div class="row">
-      <!-- 自制裁剪框 -->
-      <div id="previewWrap">
-        <img id="framePreview" alt="参考帧"/>
-        <div id="cropBox" style="display:none;"></div>
+  <!-- 顶部标题栏 -->
+  <header class="header">
+    <div class="title-group">
+      <div class="title-main">
+        FramePicker
+        <span class="badge">4:3 Frame Cutter · Pure Frontend</span>
       </div>
-
-      <div style="flex:1; min-width:260px; display:flex; flex-direction:column; gap:8px;">
-
-        <button id="initBtn" disabled>👉 生成参考帧 & 时间轴</button>
-        <div style="font-size:12px;color:#6b7280;">
-          选完视频后，先在上面的播放器里随便播放 / 暂停一下，再点这个按钮。
-        </div>
-
-        <label style="font-size:13px;">
-          帧率 FPS：
-          <input id="fpsInput" type="number" value="10" min="1" max="30" style="width:80px;">
-        </label>
-
-        <label style="font-size:13px;">
-          4:3 区域上下位置：
-          <input id="cropSlider" type="range" min="0" max="1000" value="500">
-        </label>
-
-        <div class="section-title" style="margin:4px 0 4px;">时间区间（秒）</div>
-        <div id="trimContainer">
-          <div id="timeline"></div>
-          <div id="trimOverlay">
-            <div id="shadeLeft" class="shade"></div>
-            <div id="shadeRight" class="shade"></div>
-            <div id="leftHandle" class="handle"></div>
-            <div id="rightHandle" class="handle"></div>
-            <div id="windowDragArea"></div>
-          </div>
-        </div>
-        <div style="font-size:12px;color:#6b7280;margin-top:4px;">
-          时长最多 8 秒，可自由调整起点 / 终点，选区可整体拖动。当前区间：
-          <span id="trimStart">0.0</span>s – <span id="trimEnd">0.0</span>s
-        </div>
-
-        <div class="button-row">
-          <button id="confirmBtn" disabled>开始切帧（纯前端）</button>
-          <button id="downloadZipBtn" disabled>打包下载全部图片</button>
-        </div>
-
-        <div id="statusText" style="font-size:12px;color:#666;">请先选择视频。</div>
+      <div class="title-sub">
+        客户上传视频 → 选 4:3 区域和 0–8 秒时间段 → 浏览器本地逐帧切图 → 预览 & ZIP 打包下载。
       </div>
     </div>
-  </div>
+    <div class="chip-group">
+      <span class="chip">本地处理 · 不上传服务器</span>
+      <span class="chip">支持手机 / 电脑</span>
+      <span class="chip">最多 8 秒精切</span>
+    </div>
+  </header>
 
-  <!-- 3. 结果 -->
-  <div style="margin-top:18px;">
-    <div class="section-title">3️⃣ 切图结果（横向滚动）</div>
-    <div id="framesStrip"></div>
-  </div>
+  <main class="main-grid">
+
+    <!-- 左侧：上传 + 参考帧 + 裁剪 + 时间轴 -->
+    <section class="card">
+      <div class="card-header">
+        <div>
+          <div class="step-label">
+            <span class="step-dot">1</span>
+            SELECT & PREPARE
+          </div>
+          <div class="card-title">选择视频、生成参考帧 & 时间区间</div>
+          <div class="card-sub">竖屏视频效果最好，工具会在本地提取 4:3 横向区域。</div>
+        </div>
+        <div class="card-header-right">
+          建议单段时长 ≤ 8 秒<br/>
+          竖屏 Live / 录像皆可
+        </div>
+      </div>
+
+      <!-- 上传 + 视频预览 -->
+      <div class="file-row">
+        <input id="videoInput" type="file" accept="video/*">
+        <button id="resetBtn" class="btn btn-secondary" style="padding-inline:10px;font-size:12px;">
+          重置
+        </button>
+      </div>
+      <div id="videoMeta"></div>
+      <video id="videoPlayer" controls playsinline webkit-playsinline muted></video>
+
+      <!-- 参考帧 + 裁剪 + 时间轴 -->
+      <div class="row-flex" style="margin-top:10px;">
+        <div class="preview-column">
+          <div class="label-text">参考帧预览 & 4:3 裁剪区域</div>
+          <div id="previewWrap">
+            <img id="framePreview" alt="参考帧"/>
+            <div id="cropBox" style="display:none;"></div>
+          </div>
+        </div>
+
+        <div class="controls-column">
+          <div class="label-text">步骤 A · 生成参考帧 & 时间轴</div>
+          <button id="initBtn" class="btn btn-primary" disabled>
+            <span>⚙️ 生成参考帧 & 时间轴</span>
+          </button>
+          <div style="font-size:11px;color:var(--text-mute);margin-top:3px;">
+            选完视频后，直接点击即可：工具会用中间一帧作为参考，并生成整段的时间轴缩略图。
+          </div>
+
+          <div class="label-text" style="margin-top:10px;">4:3 区域上下位置</div>
+          <input id="cropSlider" type="range" min="0" max="1000" value="500">
+          <div style="font-size:11px;color:var(--text-mute);margin-top:2px;">
+            拖动滑条或直接拖动绿色框上下移动，框内即为最终切出的 4:3 区域。
+          </div>
+
+          <div class="label-text" style="margin-top:10px;">步骤 B · 时间区间选择（最多 8 秒）</div>
+          <div id="trimContainer">
+            <div id="timeline"></div>
+            <div id="trimOverlay">
+              <div id="shadeLeft" class="shade"></div>
+              <div id="shadeRight" class="shade"></div>
+              <div id="leftHandle" class="handle"></div>
+              <div id="rightHandle" class="handle"></div>
+              <div id="windowDragArea"></div>
+            </div>
+          </div>
+
+          <div class="inline-meta">
+            <span class="pill-meta">
+              区间：
+              <span id="trimStart">0.0</span>s – <span id="trimEnd">0.0</span>s
+            </span>
+            <span class="pill-meta">
+              帧率：
+              <input id="fpsInput" type="number" value="10" min="1" max="30"
+                     style="width:52px;padding:2px 6px;border-radius:999px;border:1px solid rgba(148,163,184,0.7);background:rgba(15,23,42,0.9);color:var(--text-main);font-size:11px;">
+              fps
+            </span>
+          </div>
+
+          <div class="button-row">
+            <button id="confirmBtn" class="btn btn-primary" disabled>
+              🚀 开始切帧（在浏览器本地执行）
+            </button>
+            <button id="downloadZipBtn" class="btn btn-success" disabled>
+              📦 打包下载全部图片
+            </button>
+          </div>
+
+          <div class="status-bar">
+            <div class="status-line">
+              <div id="statusDot" class="status-dot idle"></div>
+              <div>
+                <span id="statusTextMain" class="status-text-main">请先选择一个视频文件。</span>
+                <span id="statusTextSub" style="margin-left:6px;"></span>
+              </div>
+            </div>
+            <div class="progress-wrap">
+              <div id="progressBar" class="progress-bar"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 右侧：结果预览 -->
+    <section class="card">
+      <div class="card-header">
+        <div>
+          <div class="step-label">
+            <span class="step-dot">2</span>
+            REVIEW & EXPORT
+          </div>
+          <div class="card-title">预览切出的图片 & 导出 ZIP</div>
+          <div class="card-sub">所有截图均为你选定的 4:3 区域，按时间顺序横向排列。</div>
+        </div>
+        <div class="card-header-right">
+          支持本地浏览 & 下载<br/>
+          可重复选择新视频
+        </div>
+      </div>
+
+      <div style="font-size:12px;color:var(--text-mute);">
+        横向滑动可浏览全部截图；如需重新选择区域或时间段，直接回到左侧调整后再次切帧即可。
+      </div>
+
+      <div id="framesStrip"></div>
+    </section>
+
+  </main>
 </div>
 
 <script>
   const videoInput   = document.getElementById('videoInput');
   const videoPlayer  = document.getElementById('videoPlayer');
   const initBtn      = document.getElementById('initBtn');
+  const resetBtn     = document.getElementById('resetBtn');
   const framePreview = document.getElementById('framePreview');
   const previewWrap  = document.getElementById('previewWrap');
   const cropBox      = document.getElementById('cropBox');
@@ -301,7 +767,10 @@
   const fpsInput     = document.getElementById('fpsInput');
   const confirmBtn   = document.getElementById('confirmBtn');
   const downloadZipBtn = document.getElementById('downloadZipBtn');
-  const statusText   = document.getElementById('statusText');
+  const statusDot    = document.getElementById('statusDot');
+  const statusTextMain = document.getElementById('statusTextMain');
+  const statusTextSub  = document.getElementById('statusTextSub');
+  const progressBar  = document.getElementById('progressBar');
   const videoMeta    = document.getElementById('videoMeta');
   const framesStrip  = document.getElementById('framesStrip');
 
@@ -329,15 +798,30 @@
 
   let currentFrames = [];
 
-  // 裁剪相关（用视频坐标）
+  // 裁剪相关（视频坐标）
   let videoW = 0;
   let videoH = 0;
-  let cropTopVideo = 0;      // 裁剪区域在视频里的 top（像素）
-  let cropHeightVideo = 0;   // 裁剪区域高度（像素）= videoW * 3/4
-  let cropMaxTopVideo = 0;   // 最大可上移位置
+  let cropTopVideo = 0;
+  let cropHeightVideo = 0;
+  let cropMaxTopVideo = 0;
 
   const isIOS = /iP(hone|od|ad)/.test(navigator.platform)
-    || (navigator.userAgent.includes('Mac') && 'ontouchend' in document);
+        || (navigator.userAgent.includes('Mac') && 'ontouchend' in document);
+
+  function setStatus({main, sub = '', state = 'idle', progress = 0}) {
+    statusTextMain.textContent = main;
+    statusTextSub.textContent = sub;
+    progressBar.style.width = `${Math.max(0, Math.min(100, progress))}%`;
+
+    statusDot.classList.remove('idle', 'error');
+    if (state === 'working') {
+      statusDot.classList.remove('idle', 'error');
+    } else if (state === 'error') {
+      statusDot.classList.add('error');
+    } else {
+      statusDot.classList.add('idle');
+    }
+  }
 
   async function unlockVideo() {
     if (!isIOS) return;
@@ -349,21 +833,67 @@
     }
   }
 
+  // 重置
+  function resetAll() {
+    selectedFile = null;
+    videoW = 0;
+    videoH = 0;
+    videoInput.value = '';
+    confirmBtn.disabled = true;
+    downloadZipBtn.disabled = true;
+    initBtn.disabled = true;
+    framesStrip.innerHTML = '';
+    currentFrames = [];
+    videoMeta.textContent = '';
+    framePreview.style.display = 'none';
+    cropBox.style.display = 'none';
+    cropSlider.value = 500;
+    timeline.innerHTML = '';
+    trimStartEl.textContent = '0.0';
+    trimEndEl.textContent = '0.0';
+    progressBar.style.width = '0%';
+    statusDot.classList.add('idle');
+    setStatus({
+      main: '请先选择一个视频文件。',
+      sub: '支持手机相册视频，本地处理不上传服务器。',
+      state: 'idle',
+      progress: 0
+    });
+    if (videoUrl) {
+      URL.revokeObjectURL(videoUrl);
+      videoUrl = null;
+    }
+    videoPlayer.src = '';
+    videoPlayer.style.display = 'none';
+  }
+
+  resetBtn.addEventListener('click', resetAll);
+
   // 选择视频
   videoInput.addEventListener('change', () => {
     const file = videoInput.files && videoInput.files[0];
-    if (!file) return;
+    if (!file) {
+      resetAll();
+      return;
+    }
 
     selectedFile = file;
     confirmBtn.disabled = true;
     downloadZipBtn.disabled = true;
     initBtn.disabled = false;
-    statusText.textContent = '请在下方播放器中播放 / 暂停一下，然后点击「生成参考帧 & 时间轴」。';
     framesStrip.innerHTML = '';
-    videoMeta.textContent = '';
     currentFrames = [];
     framePreview.style.display = 'none';
     cropBox.style.display = 'none';
+    cropSlider.value = 500;
+    progressBar.style.width = '0%';
+
+    setStatus({
+      main: '已选择视频文件。',
+      sub: '点击「生成参考帧 & 时间轴」开始准备。',
+      state: 'idle',
+      progress: 5
+    });
 
     if (videoUrl) URL.revokeObjectURL(videoUrl);
     videoUrl = URL.createObjectURL(file);
@@ -375,7 +905,7 @@
       duration = videoPlayer.duration;
       videoW = videoPlayer.videoWidth;
       videoH = videoPlayer.videoHeight;
-      videoMeta.textContent = `时长：${duration.toFixed(1)} 秒，分辨率：${videoW}×${videoH}`;
+      videoMeta.textContent = `时长：${duration.toFixed(1)} 秒 · 分辨率：${videoW} × ${videoH}`;
     };
   });
 
@@ -386,18 +916,47 @@
       return;
     }
     initBtn.disabled = true;
-    statusText.textContent = '正在生成参考帧和时间轴…';
+    confirmBtn.disabled = true;
+    downloadZipBtn.disabled = true;
 
-    await unlockVideo();
+    setStatus({
+      main: '正在生成参考帧和时间轴…',
+      sub: '大文件可能需要几秒钟，请稍候。',
+      state: 'working',
+      progress: 20
+    });
 
-    await setupPreviewFrame();
-    await initTimelineFromVideo();
+    try {
+      await unlockVideo();
+      await setupPreviewFrame();
+      setStatus({
+        main: '参考帧已生成，正在构建时间轴缩略图…',
+        sub: '',
+        state: 'working',
+        progress: 35
+      });
+      await initTimelineFromVideo();
 
-    confirmBtn.disabled = false;
-    statusText.textContent = '参考帧和时间轴已生成，可以调整裁剪区域和时间区间，然后开始切帧。';
+      confirmBtn.disabled = false;
+      setStatus({
+        main: '准备就绪。',
+        sub: '调整绿色 4:3 区域和时间区间后，点击「开始切帧」。',
+        state: 'idle',
+        progress: 45
+      });
+    } catch (e) {
+      console.error(e);
+      setStatus({
+        main: '生成参考帧失败。',
+        sub: e.message || '',
+        state: 'error',
+        progress: 0
+      });
+      initBtn.disabled = false;
+    }
   });
 
-  // 取中间一帧，作为参考帧，顺便初始化裁剪框参数
+  // 取中间一帧作为参考帧，并初始化裁剪参数
   async function setupPreviewFrame() {
     const captureTime = duration / 2;
     await seekVideo(captureTime);
@@ -411,7 +970,7 @@
     framePreview.src = canvas.toDataURL('image/jpeg', 0.9);
     framePreview.style.display = 'block';
 
-    // 以视频宽度为基准，裁剪高度 = 宽 * 3/4
+    // 以视频宽度为基准，裁剪高度 = 宽 * 3/4（4:3）
     cropHeightVideo = videoW * 3 / 4;
     cropMaxTopVideo = Math.max(0, videoH - cropHeightVideo);
     cropTopVideo = cropMaxTopVideo / 2;  // 默认居中
@@ -431,12 +990,12 @@
     });
   }
 
-  // 把当前 cropTopVideo / cropHeightVideo 映射到裁剪框 UI
+  // 将视频坐标的裁剪区域映射到 UI 上
   function applyCropUI() {
     const displayW = framePreview.clientWidth;
     if (!displayW || !videoW) return;
 
-    const scale = displayW / videoW; // 从视频像素到显示像素
+    const scale = displayW / videoW;
     const displayH = videoH * scale;
 
     const dispCropH = cropHeightVideo * scale;
@@ -445,13 +1004,13 @@
     previewWrap.style.height = displayH + 'px';
     cropBox.style.display = 'block';
     cropBox.style.height = dispCropH + 'px';
+    // 左右留一点内边距（通过 CSS 的 left/right 已经留 10px）
     cropBox.style.top = dispCropTop + 'px';
   }
 
-  // slider 控制上下位置
   cropSlider.addEventListener('input', () => {
     if (!videoH) return;
-    const ratio = Number(cropSlider.value) / 1000; // 0 ~ 1
+    const ratio = Number(cropSlider.value) / 1000;
     cropTopVideo = cropMaxTopVideo * ratio;
     applyCropUI();
   });
@@ -488,7 +1047,6 @@
       cropTopVideo = newTop;
       applyCropUI();
 
-      // 同步 slider
       const ratio = cropMaxTopVideo ? (cropTopVideo / cropMaxTopVideo) : 0;
       cropSlider.value = Math.round(ratio * 1000);
     };
@@ -502,7 +1060,6 @@
     cropBox.addEventListener('pointerup', pointerUp);
     cropBox.addEventListener('pointercancel', pointerUp);
 
-    // 兼容旧移动端（不支持 pointer）
     cropBox.addEventListener('touchstart', pointerDown, {passive:false});
     cropBox.addEventListener('touchmove', pointerMove, {passive:false});
     cropBox.addEventListener('touchend', pointerUp);
@@ -694,7 +1251,7 @@
     };
   }
 
-  // 纯前端切帧（用我们自算的裁剪区域）
+  // 纯前端切帧
   async function processVideoFrames() {
     const fps = Number(fpsInput.value) || 10;
     if (!selectedFile || !videoW || !videoH) return;
@@ -713,7 +1270,12 @@
       frameTimes.push(Math.min(t, endSec));
     }
 
-    statusText.textContent = `共 ${frameTimes.length} 帧，正在截取…`;
+    setStatus({
+      main: `共 ${frameTimes.length} 帧，正在截取…`,
+      sub: '所有操作都在本地浏览器完成，不上传服务器。',
+      state: 'working',
+      progress: 55
+    });
     framesStrip.innerHTML = '';
     currentFrames = [];
     downloadZipBtn.disabled = true;
@@ -721,14 +1283,20 @@
     await unlockVideo();
 
     const canvas = document.createElement('canvas');
-    canvas.width  = cropHeightVideo / (3/4); // 等价于 videoW
-    canvas.height = cropHeightVideo;         // 保持 4:3
-
+    canvas.width  = videoW;                 // 输出宽度 = 视频宽度
+    canvas.height = cropHeightVideo;        // 输出高度 = 4:3，对应 videoW * 3/4
     const ctx = canvas.getContext('2d');
 
     for (let i = 0; i < frameTimes.length; i++) {
       const t = frameTimes[i];
-      statusText.textContent = `正在截取帧 ${i+1}/${frameTimes.length}（${t.toFixed(2)}s）…`;
+      const pct = 55 + (i + 1) / frameTimes.length * 35; // 55% -> 90%
+
+      setStatus({
+        main: `正在截取帧 ${i+1} / ${frameTimes.length}`,
+        sub: `时间位置：${t.toFixed(2)}s`,
+        state: 'working',
+        progress: pct
+      });
 
       await seekVideo(t);
 
@@ -749,13 +1317,30 @@
       const img = document.createElement('img');
       img.src = imgUrl;
       div.appendChild(img);
-      const label = document.createElement('div');
-      label.textContent = `#${i+1}`;
-      div.appendChild(label);
+
+      const meta = document.createElement('div');
+      meta.className = 'thumb-meta';
+
+      const tag = document.createElement('span');
+      tag.className = 'thumb-tag';
+      tag.textContent = `#${i+1}`;
+      meta.appendChild(tag);
+
+      const timeLabel = document.createElement('span');
+      timeLabel.className = 'thumb-time';
+      timeLabel.textContent = `${t.toFixed(2)}s`;
+      meta.appendChild(timeLabel);
+
+      div.appendChild(meta);
       framesStrip.appendChild(div);
     }
 
-    statusText.textContent = `截取完成：共 ${currentFrames.length} 帧。`;
+    setStatus({
+      main: `截取完成：共 ${currentFrames.length} 帧。`,
+      sub: '可以打包下载 ZIP，或调整参数重新切帧。',
+      state: 'idle',
+      progress: 95
+    });
     if (currentFrames.length > 0) {
       downloadZipBtn.disabled = false;
     }
@@ -773,8 +1358,12 @@
       await processVideoFrames();
     } catch (e) {
       console.error(e);
-      alert('切帧失败：' + e.message);
-      statusText.textContent = '切帧失败：' + e.message;
+      setStatus({
+        main: '切帧失败。',
+        sub: e.message || '',
+        state: 'error',
+        progress: 0
+      });
     } finally {
       confirmBtn.disabled = false;
     }
@@ -784,7 +1373,12 @@
     if (!currentFrames.length) return;
 
     downloadZipBtn.disabled = true;
-    statusText.textContent = '正在打包 ZIP…';
+    setStatus({
+      main: '正在打包 ZIP…',
+      sub: '',
+      state: 'working',
+      progress: 95
+    });
 
     try {
       const zip = new JSZip();
@@ -806,17 +1400,29 @@
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      statusText.textContent = 'ZIP 打包完成，已开始下载。';
+      setStatus({
+        main: 'ZIP 打包完成，已开始下载。',
+        sub: '如需再次切帧，可调整参数重新执行。',
+        state: 'idle',
+        progress: 100
+      });
     } catch (e) {
       console.error(e);
-      alert('打包失败：' + e.message);
-      statusText.textContent = '打包失败：' + e.message;
+      setStatus({
+        main: '打包失败。',
+        sub: e.message || '',
+        state: 'error',
+        progress: 0
+      });
     } finally {
       if (currentFrames.length) {
         downloadZipBtn.disabled = false;
       }
     }
   });
+
+  // 初始化状态
+  resetAll();
 </script>
 
 </body>
